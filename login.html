@@ -1,0 +1,106 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>Login</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="js/jquery.js"></script>
+    <script src="js/jquery.mobile-1.4.2.js"></script>
+    <script src="js/knockout.js"></script>
+    <link rel="stylesheet" type="text/css" href="css/jquery.mobile-1.4.2.css" />
+    <style>
+        .divbtn {
+            text-align: center;
+        }
+    </style>
+    <script>
+        $(function(){
+            var username=localStorage.getItem("username");
+            if(username){
+                $("#uname").val(username);
+                $("#upassword").val(localStorage.getItem("password"));
+            }
+            $("#btnlogin").bind("click",function(){
+                var uname=$.trim($("#uname").val());
+                var upass=$.trim($("#upassword").val());
+                if(!uname||!upass){
+                    alert("用户名或密码为空");
+                }
+                else {
+                    if ($("#keep").val()) {
+                        localStorage.setItem("username", uname);
+                        localStorage.setItem("password", upass);
+                    }
+                    $.ajax({
+                        url: "Login.ashx",
+                        type: "post",
+                        data:{"username":uname,"password":upass},            
+                        success: function (data) {
+                           
+                        },
+                        error: function () {
+                            console.log("ajax error");
+                        }
+                    });
+                }
+            });
+
+           
+
+        });
+    </script>
+</head>
+<body>
+    <div data-role="page" id="login">
+        <div data-role="header">
+            <h1>用户登陆</h1>
+        </div>
+        <div role="main" class="ui-content">
+            <div data-role="fieldcontain">
+                <label for="uname">用户名：</label>
+                <input type="text" id="uname" placeholder="用户名：" required />
+            </div>
+            <div data-role="fieldcontain">
+                <label for="upassword">密码：</label>
+                <input type="password" id="upassword" placeholder="密码：" required />
+            </div>
+            <div class="divbtn">
+                <label for="keep">记住用户信息</label>
+                <input type="checkbox" id="keep" />
+                <input type="button" value="登陆" id="btnlogin" data-inline="true" />
+                <a href="#register">注册</a>
+            </div>
+        </div>
+    </div>
+    <div data-role="page" id="register">
+        <div data-role="header">
+            <h1>用户注册</h1>
+        </div>
+        <div role="main" class="ui-content">
+            <form>
+                <div data-role="fieldcontain">
+                    <label for="username">用户名：</label>
+                    <input type="text" id="username" placeholder="用户名:" />
+                </div>
+                <div data-role="fieldcontain">
+                    <label for="password">密码：</label>
+                    <input type="text" id="password" placeholder="密码:" />
+                </div>
+                <div data-role="fieldcontain">
+                    <label for="conpassword">确认密码：</label>
+                    <input type="text" id="conpassword" placeholder="确认密码:" />
+                </div>               
+                <div data-role="fieldcontain">
+                    <label for="school">学校：</label>
+                    <select id="school" data-native-menu="false">
+                        <option value="请选择">请选择：</option>
+                    </select>
+                </div>
+                <div class="divbtn">
+                    <input type="button" value="确定" data-inline="true" />
+                    <input type="reset" value="取消" data-inline="true" />
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

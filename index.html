@@ -1,0 +1,690 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>Index</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="utf-8">
+    <script src="js/jquery.js"></script>
+    <script src="js/jquery.mobile-1.4.2.js"></script>
+    <script src="js/knockout.js"></script>
+    <script type="text/javascript" charset="utf-8" src="cordova.js"></script>
+    <link rel="stylesheet" type="text/css" href="css/jquery.mobile-1.4.2.css" />
+    <style>
+    .divbtn {
+        text-align: center;
+    }
+
+    #detailgoods h3 {
+        margin: 0px;
+        padding: 10px;
+        text-align: center;
+        margin-bottom: 0px;
+        background-color: #ccc;
+    }
+
+    #detailgoods > div[role='main'] {
+        padding: 0px;
+    }
+
+        #detailgoods > div[role='main'] > div {
+            margin: 2px;
+            padding: 10px;
+            border: 1px solid #ccc;
+        }
+
+    #detailgoods img {
+        width: 99%;
+        border: 1px solid red;
+        margin-top: 10px;
+        margin-bottom: 10px;
+    }
+</style>
+    <script>
+        localhost ="http://192.168.1.110/Test/";
+        $(function () {
+            var username = localStorage.getItem("username");
+            if (username) {
+                $("#uname").val(username);
+                $("#upassword").val(localStorage.getItem("password"));
+            }
+            $("#btnlogin").bind("click", function () {
+                var uname = $.trim($("#uname").val());
+                var upass = $.trim($("#upassword").val());
+                if (!uname || !upass) {
+                    alert("用户名或密码为空");
+                }
+                
+                else {
+                    if ($("#keep").val()) {
+                        localStorage.setItem("username", uname);
+                        localStorage.setItem("password", upass);
+                    }
+                    $.mobile.loading("show");
+                    $.ajax({
+                        url:localhost+ "Login.ashx",
+                        type: "post",
+                        data: { "username": uname, "password": upass },
+                        success: function (data) {
+                            if (data == "true") {
+                                $.mobile.changePage("#home");
+                                ViewModel.ProductType.removeAll();
+                                $.ajax({
+                                    url:localhost+ "Home.ashx?type=alllist",
+                                    type: "get",
+                                    dataType:"json",
+                                    success: function (data) {                                       
+                                        for (var i = 0; i < data.length; i++) {                                            
+                                            ViewModel.ProductType.push({ typeid: data[i].typeid, typevalue: data[i].typevalue });
+                                        }
+                                        $("#home>div[role='main']>ul").listview("refresh");
+                                        $.mobile.loading("hide");
+                                    },
+                                    error:function(){
+                                        console.log("ajax error");
+                                    }
+                                })
+                            }
+                            else {
+                                alert(data);
+                            }
+                        },
+                        error: function () {
+                            console.log("ajax error");
+                        }
+                    });
+                }
+            });
+            $("#home>div[data-role='header']>div>ul>li").each(function (index,e) {
+                $(e).bind("click", function () {
+                    $("#home>div[role='main']>ul").empty();
+                    if (index == 0) {
+                        $.mobile.loading("show");
+                        $.ajax({
+                            url:localhost+ "Home.ashx?type=alllist",
+                            type: "get",
+                            dataType: "json",
+                            success: function (data) {
+                                ViewModel.ProductType.removeAll();
+                                for (var i = 0; i < data.length; i++) {                                   
+                                    ViewModel.ProductType.push({ typeid: data[i].typeid, typevalue: data[i].typevalue });
+                                }
+                                $("#home>div[role='main']>ul").listview("refresh");
+                                libind("home");
+                                $.mobile.loading("hide");
+                            }
+                        });
+                    }
+                    else {
+                        $.mobile.loading("show");
+                        $.ajax({
+                            url:localhost+ "Goods.ashx?index=" + index,
+                            type: "get",
+                            dataType: "json",
+                            success: function (data) {
+                                if (index == 1) {
+                                    for (var i = 0; i < data.length; i++) {
+                                        $("#home>div[role='main']>ul").append("<li id='"+data[i].goodsId+"'><a href='#'>" + data[i].goodsType + " " +
+                                            data[i].goodsName + "<span class='ui-li-count'>" + data[i].publishTime + "</span></a></li>");
+                                    }
+                                    $("#home>div[role='main']>ul").listview("refresh");
+                                    libind("home");
+                                }
+                                if (index == 2) {
+                                    for (var i = 0; i < data.length; i++) {
+                                        $("#home>div[role='main']>ul").append("<li data-icon='star' id='"+data[i].goodsId+"'><a href='#'>" + data[i].goodsType + " " +
+                                            data[i].goodsName + "<span class='ui-li-count'>" + data[i].starlevel + "</span></a></li>");
+                                    }
+                                    $("#home>div[role='main']>ul").listview("refresh");
+                                    libind("home");
+                                }
+                                $.mobile.loading("hide");
+                            }
+                        });
+                    }
+                   
+                });
+            });
+
+           
+           
+            $("#email", "#register").bind("blur", function () {
+                ViewModel.Schools.removeAll();                
+                $.ajax({
+                    url: localhost+"Register.ashx?query=schools",
+                    type: "get",
+                    dataType:"json",
+                    success: function (data) {
+                        ViewModel.Schools.removeAll();
+                        for (var i = 0; i < data.length; i++) {                           
+                            ViewModel.Schools.push({schoolId:data[i].schoolId,schoolName:data[i].schoolName});
+                        }                      
+                    },
+                    error: function () {
+                        console.log("register ajax error");
+                    }
+                });
+            });
+
+            $("div[role='main']>button:eq(0)", "#pictures").bind("click", function () {
+                $.mobile.loading("show");
+                $.ajax({
+                    url: localhost + "PublishGoods.ashx",
+                    type: "post",
+                    data: {goodsname:$("#goodsname","#pictures").val(),
+                        goodstype:$("#goodstype","#pictures").val(),
+                        goodsprice:$("#goodsprice","#pictures").val(),
+                        goodscount:$("#goodscount","#pictures").val(),
+                        goodsdescribe:$("#goodsdescribe","#pictures").val()
+                    },
+                    success: function (data) {
+                        for (var i = 0; i < $("#smallImage", "#pictures").children().length-1; i++) {
+                            var imgsrc = $("#smallImage", "#pictures").children()[i].src;
+                            try {
+                                uploadPhoto(imgsrc);
+                            }
+                            catch (e) {
+                                alert(e.message);
+                            }
+                        }
+                        alert(data);
+                        $.mobile.changePage("#mine");
+                        $.mobile.loading("hide");
+                    },
+                    error: function () {
+                        console.log("publish goods error");
+                    }
+                });
+
+                
+            });
+
+            $("div[role='main']>button:eq(1)", "#pictures").bind("click", function () {
+                $.mobile.back();
+            });
+            $("#register>div[role='main']>form>div.divbtn>input[type='button']").bind("click", function () {
+                if ($("#password", "#register").val() != $("#conpassword", "#register").val()) {
+                    alert("两次密码输入不一致");
+                }
+                else {
+                    $.ajax({
+                        url: localhost+"Register.ashx",
+                        type:"post",
+                        data: $("#register form").serialize(),
+                        success: function (data) {
+                            if (data == "true") {
+                                alert("注册成功");
+                                $.mobile.changePage("#login");
+                            }
+                        },
+                        error: function () {
+                            console.log("register ajax eror");
+                        }
+                    });
+                }
+            });
+
+            $("#mine>div[role='main']>div>button:eq(0)").bind("click", function () {
+                $("#mine input").attr("readonly", false);
+            });
+            $("#mine>div[role='main']>div>button:eq(1)").bind("click", function () {
+                $("#mine input").attr("readonly", false);
+            });
+
+            $("#mine>div:eq(0)>div>ul>li:eq(0)").bind("click", function () {
+                $("#mine>div[role='main']>div").css("display", "block");
+                $("#mine>div[role='main']>ul").css("display", "none");
+            });
+
+            $("#mine>div:eq(0)>div>ul>li:eq(1)").bind("click", function () {
+                $.mobile.loading("show");
+                $.ajax({
+                    url: localhost + "Mine.ashx?id=saled",
+                    type: "get",
+                    dataType: "json",
+                    success: function (data) {
+                        $("#mine>div[role='main']>ul").empty();
+                        for (var i = 0; i < data.length; i++) {
+                            $("#mine>div[role='main']>ul").append("<li id='"+data[i].goodsid+"'><a href='#'>" + data[i].goodsname +
+                                " " + data[i].publishtime + "<span class='ui-li-count'>" + data[i].goodsprice +
+                                "</span></a></li>");
+                        }
+                        $.mobile.loading("hide");
+                        $("#mine>div[role='main']>div").css("display", "none");
+                        $("#mine>div[role='main']>ul").css("display", "block");
+                        $("#mine>div[role='main']>ul").listview("refresh");
+                        libind("mine");
+                       
+                    },                       
+                    error: function () {
+                        console.log("get saled error");
+                    }
+                });              
+            });
+
+            $("#picture button").bind("click", function () {
+                var src = $("img", "#picture")[0].src;
+                $("#pictures #smallImage>img[src='"+src+"']").remove();
+                $.mobile.changePage("#pictures");
+            });
+        });
+            function libind(page) {
+                $("#"+page+">div[role='main']>ul>li").on("click", function () {
+                    var id = $(this).attr("id");
+                    var type=$(this).find("a").text();
+                    if (id) {
+                        $.mobile.loading("show");
+                        $.ajax({
+                            url: localhost + "DetailGoods.ashx?id=" + id,
+                            type: "get",
+                            success: function (data) {
+                                ViewModel.DetailGoods.name(data.goodsname);
+                                ViewModel.DetailGoods.type(data.goodstype);
+                                ViewModel.DetailGoods.price(data.goodsprice);
+                                ViewModel.DetailGoods.count(data.goodscount);
+                                ViewModel.DetailGoods.publishTime(data.publishTime);
+                                ViewModel.DetailGoods.describe(data.goodsdescribe);
+
+                                ViewModel.UserInfo.username(data.userinfo.username);
+                                ViewModel.UserInfo.email(data.userinfo.email);
+                                ViewModel.UserInfo.phone(data.userinfo.phone);
+                                ViewModel.UserInfo.qq(data.userinfo.qq);
+
+                                ViewModel.GoodsImg.removeAll();
+                                $("#detailgoods>div[role='main']>div:eq(1)").empty();
+                                for (var i = 0; i < data.images.length; i++) {                              
+                                    ViewModel.GoodsImg.push(data.images[i]);
+                                }
+                                $.mobile.loading("hide");
+                                $.mobile.changePage("#detailgoods");
+                            },
+                            error: function () {
+                                console.log("DetailGoods error");
+                            }
+                        });
+                    } else {
+                        $.mobile.loading("show");
+                        $.ajax({
+                            url: localhost + "Goods.ashx?index=0&type="+type,
+                            dataType: "json",
+                            success: function (data) {
+                                $("#typegoods>div[role='main']>ul").empty();
+                                $("#typegoods>div:eq(0)>h1").empty();
+                                for (var i = 0; i < data.length; i++) {
+                                    $("#typegoods>div[role='main']>ul").append("<li id='" + data[i].goodsid + "'><a href='#'>" +
+                                    data[i].goodsname + " " +data[i].publishtime+ "<span class='ui-li-count'>" + data[i].goodscount + "</span></a></li>");
+                                }
+                                $.mobile.loading("hide");
+                                libind("typegoods");
+                                $("#typegoods>div:eq(0)>h1").append(type);                                
+                                $.mobile.changePage("#typegoods");
+                                $("#typegoods>div[role='main']>ul").listview("refresh");
+                                
+                            },
+                            error: function () {
+                                console.log("TypeGoods ajax error");
+                            }
+                        });
+                    }
+                });
+            }
+            function mineclick() {
+                $.mobile.loading("show");
+                $.ajax({
+                    url: localhost + "Mine.ashx?id=mine",
+                    type: "get",
+                    dataType: "json",
+                    success: function (data) {
+                        ViewModel.MineInfo.username(data.username);
+                        ViewModel.MineInfo.password(data.password);
+                        ViewModel.MineInfo.email(data.email);
+                        ViewModel.MineInfo.phone(data.phone);
+                        ViewModel.MineInfo.qq(data.qq);
+                        $("#mine input").attr("readonly", true);
+                        $.mobile.loading("hide");
+                        $.mobile.changePage("#mine");
+                    },
+                    error: function () {
+                        console.log("Mine ajax error");
+                    }
+                });
+            }
+            function picplus() {
+                $.mobile.changePage("#upload");
+            }
+    </script>
+
+</head>
+<body>
+    <div data-role="page" id="login">
+        <div data-role="header">
+            <h1>用户登陆</h1>
+        </div>
+        <div role="main" class="ui-content">            
+            <div data-role="fieldcontain">
+                <label for="uname">用户名：</label>
+                <input type="text" id="uname" placeholder="用户名：" required />
+            </div>
+            <div data-role="fieldcontain">
+                <label for="upassword">密码：</label>
+                <input type="password" id="upassword" placeholder="密码：" required />
+            </div>
+            <div class="divbtn">
+                <label for="keep">记住用户信息</label>
+                <input type="checkbox" id="keep" />
+                <input type="button" value="登陆" id="btnlogin" data-inline="true" />
+                <a href="#register">注册</a>
+            </div>
+        </div>
+    </div>
+    <div data-role="page" id="register">
+        <div data-role="header">
+            <h1>用户注册</h1>
+        </div>
+        <div role="main" class="ui-content">
+            <form>
+                <div data-role="fieldcontain">
+                    <label for="username">用户名：</label>
+                    <input type="text" id="username" name="username" placeholder="用户名:" required="required" />
+                </div>
+                <div data-role="fieldcontain">
+                    <label for="password">密码：</label>
+                    <input type="password" id="password" name="password" placeholder="密码:" required />
+                </div>
+                <div data-role="fieldcontain">
+                    <label for="conpassword">确认密码：</label>
+                    <input type="password" id="conpassword" name="conpassword" placeholder="确认密码:" required />
+                </div>
+                <div data-role="fieldcontain">
+                    <label for="email">邮箱：</label>
+                    <input type="email" id="email" name="email" placeholder="邮箱:" />
+                </div>
+                <div data-role="fieldcontain">
+                    <label for="phone">手机：</label>
+                    <input type="tel" id="phone" name="phone" placeholder="手机:" />
+                </div>       
+                <div data-role="fieldcontain">
+                    <label for="qq">QQ：</label>
+                    <input type="text" id="qq" name="qq" placeholder="QQ:" />
+                </div>       
+                <div data-role="fieldcontain">
+                    <label for="school">学校：</label>
+                    <select id="school" name="school"  data-bind="options:Schools,optionsText:'schoolName',optionsValue:'schoolId'">                        
+                    </select>
+                </div>
+                <div class="divbtn">
+                    <input type="button" value="确定" data-inline="true" />
+                    <input type="reset" value="取消" data-inline="true" />
+                </div>
+            </form>
+        </div>
+    </div>
+    <!--start of home page-->
+    <div data-role="page" data-fullscreen="true" id="home">
+        <div data-role="header">
+            <h1>毕业不摆摊</h1>
+            <div data-role="navbar">
+                <ul>
+                    <li><a  data-icon="bullets" class="active ui-btn-active">所有商品</a></li>
+                    <li><a  data-icon="recycle">最新商品</a></li>
+                    <li><a  data-icon="star">最受欢迎</a></li>
+                </ul>
+            </div>
+        </div>
+        <div role="main" class="ui-content">
+            <ul data-role="listview" data-bind="foreach:ProductType">
+                <li><a href="#" data-bind="text:typevalue"></a></li>
+            </ul>
+        </div>
+        <div data-role="footer" data-position="fixed" data-theme="b">
+            <div data-role="navbar">
+                <ul>
+                    <li><a class="active ui-btn-active" href="#home" data-icon="home">首页</a></li>
+                    <li onclick="mineclick()"><a href="#" data-icon="user">我的主页</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <!--end of home page;-->
+    <!--start of typegoods page-->
+    <div data-role="page" id="typegoods">
+        <div data-role="header">
+           <h1></h1>
+        </div>
+        <div role="main" class="ui-content">
+           <ul data-role="listview">
+
+           </ul>
+        </div>
+        <div data-role="footer" data-position="fixed" data-theme="b">
+            <div data-role="navbar">
+                <ul>
+                    <li><a href="#home" data-icon="home">首页</a></li>
+                    <li><a href="#mine" data-icon="user">我的主页</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <!--end of typegoods page-->
+    <!--start of detailgoods page-->
+    <div data-role="page" id="detailgoods">
+        <div data-role="header">
+            <h1>商品详细信息</h1>
+        </div>
+        <div role="main" class="ui-content">
+            <div>
+                <h3>商品信息</h3>
+                <p>商品名称：<span data-bind="text:DetailGoods.name"></span></p>
+                <p>商品类型：<span data-bind="text:DetailGoods.type"></span></p>
+                <p>商品价格：<span data-bind="text:DetailGoods.price"></span></p>
+                <p>商品数量：<span data-bind="text:DetailGoods.count"></span></p>
+                <p>商品描述：<span data-bind="text:DetailGoods.describe"></span></p>
+            </div> 
+            <div data-bind="foreach:GoodsImg,visible:GoodsImg().length>0">
+                <img data-bind="attr:{src:imgurl}" />
+            </div> 
+            <div>
+                <h3>联系商家</h3>
+                <p>用户名：<span data-bind="text:UserInfo.username"></span></p>
+                <p>电子邮件：<span data-bind="text:UserInfo.email"></span></p>
+                <p>手机：<span data-bind="text:UserInfo.phone"></span></p>
+                <p>QQ：<span data-bind="text:UserInfo.qq"></span></p>
+            </div>
+            <div>
+                <h3>我来评论</h3>
+                <label for="slevel">星级：</label>
+                <input type="range" id="slevel" name="slevel" value="3" min="0" max="5" step="1" />
+                <label for="mcomment">评语：</label>
+                <textarea id="mcomment" name="mcomment"></textarea>
+                <button id="btncomment">评论</button>
+            </div> 
+        </div>
+        <div data-role="footer" data-position="fixed" data-theme="b">
+            <div data-role="navbar">
+                <ul>
+                    <li><a href="#home" data-icon="home">首页</a></li>
+                    <li><a href="#mine" data-icon="user">我的主页</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <!--end of detailgoods page-->
+    <!--start of mine page-->
+    <div data-role="page" id="mine">
+        <div data-role="header">
+            
+            <h1>我的主页</h1>
+            <a class="ui-btn ui-btn-right ui-btn-b" href="#upload" data-transition="slideup">上传新品</a>
+            <div data-role="navbar">
+                <ul>
+                    <li><a data-icon="user" class="active ui-btn-active">个人信息</a></li>
+                    <li><a data-icon="carat-u">卖出的商品</a></li>
+                </ul>
+            </div>
+        </div>
+        <div role="main" class="ui-content">
+            <div>
+                <h3>我的信息</h3>
+                <p>用户名：<span data-bind="text:MineInfo.username"></span></p>
+                <p>密码：<input type="password" id="mpassword" data-bind="value:MineInfo.password"  /></p>
+                <p>邮件：<input type="email" id="memail"  data-bind="value:MineInfo.email" /></p>
+                <p>手机：<input type="tel" id="mphone"  data-bind="value:MineInfo.phone" /></p>
+                <p>QQ：<input type="text" id="mqq"  data-bind="value:MineInfo.qq" /></p>
+                <button data-inline="true">编辑</button>
+                <button data-inline="true">保存</button>
+            </div>
+            <ul data-role="listview" style="display:none;">
+
+            </ul>
+        </div>
+        <div data-role="footer" data-position="fixed" data-theme="b">
+            <div data-role="navbar">
+                <ul>
+                    <li><a href="#home" data-icon="home">首页</a></li>
+                    <li><a href="#mine" data-icon="user">我的主页</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <!--end of mine page-->
+    <!--start of upload dialog page-->
+    <div data-role="page" data-dialog="true" id="upload">
+        <div role="main" class="ui-content">
+            <button onclick="capturePhoto();">拍照</button>
+            <button onclick="getPhoto(pictureSource.PHOTOLIBRARY);">从手机相册选择</button>
+            <a class="ui-btn ui-btn-b" data-rel="back">取消</a>
+        </div>
+    </div>
+    <!--end of upload dialog page-->
+    <div data-role="page" id="pictures">
+        <div role="main" class="ui-content"> 
+            <div id="smallImage">
+               <img onclick="picplus()" src="http://192.168.1.110/Test/img/plus.png" style="width:80px;height:80px;margin:10px;" />
+            </div>        
+                <div data-role="fieldcontain">
+                    <label for="goodsname">商品名：</label>
+                    <input type="text" id="goodsname" name="goodsname" />
+                </div>
+                <div data-role="fieldcontain">
+                    <label for="goodstype">商品类型：</label>
+                    <select id="goodstype" name="goodstype" data-bind="options:ProductType,optionsText:'typevalue',optionsValue:'typeid'"></select>
+                </div>
+                <div data-role="fieldcontain">
+                    <label for="goodsprice">价格：</label>
+                    <input type="number" id="goodsprice" name="goodsprice" />
+                </div>
+                <div data-role="fieldcontain">
+                    <label for="goodscount">数量：</label>
+                    <input type="number" id="goodscount" name="goodscount" value="1" />
+                </div>
+                <div data-role="fieldcontain">
+                    <label for="goodsdescribe">描述：</label>
+                    <textarea id="goodsdescribe" name="goodsdescribe" rows="8"></textarea>
+                </div>
+                <button data-inline="true">确定</button>
+                <button data-inline="true">取消</button>               
+        </div>
+    </div>
+    
+    <div data-role="page" id="picture">
+        <div data-role="header" data-theme="b">
+            <h1>详细图片</h1>
+            <button data-icon="delete" class="ui-btn-right" data-inline="true" data-iconpos="notext"></button>
+        </div>
+        <div role="main" class="ui-content">
+
+        </div>
+    </div>
+   
+    <script>        //ViewModel
+        var ViewModel = {
+            ProductType: ko.observableArray(),
+            Schools: ko.observableArray(),
+            SaledGoods:ko.observableArray(),
+            GoodsImg:ko.observableArray(),
+            DetailGoods: {
+                name: ko.observable(""),
+                price: ko.observable(""),
+                describe: ko.observable(""),
+                count: ko.observable(""),
+                type: ko.observable(""),
+                publishTime:ko.observable("")
+            },
+            UserInfo:{
+                username:ko.observable(""),
+                email:ko.observable(""),
+                phone:ko.observable(""),
+                qq:ko.observable("")
+            },
+            MineInfo: {
+                username: ko.observable(""),
+                password:ko.observable(""),
+                email: ko.observable(""),
+                phone: ko.observable(""),
+                qq: ko.observable("")
+            }
+        }
+        ko.applyBindings(ViewModel);
+    </script>
+    <script>
+        var pictureSource, destinationType;
+        document.addEventListener("deviceready", onDeviceReady, false);
+        function onDeviceReady() {
+            pictureSource = navigator.camera.PictureSourceType;
+            destinationType = navigator.camera.DestinationType;
+
+        }       
+            function onPhotoDataSuccess(ImageData){
+                var simg = $("<img style='width:80px;height:80px;margin:10px;' src='data:image/jpeg;base64," +ImageData+"' />");
+                //simg.src="data:image/jpeg;base64,"+ImageData;
+                $("#smallImage").prepend(simg);
+                $.mobile.changePage("#pictures");
+            }
+            function onPhotoURISuccess(imageURI) {
+                var simg=$("<img style='width:80px;height:80px;margin:10px;' src='"+imageURI+"' />");
+                //simg.src = imageURI;
+                $("#smallImage").prepend(simg);
+                simg.bind("click", function () {
+                    $("#picture>div[role='main']").empty();
+                    $("#picture>div[role='main']").append("<img src='" + imageURI + "' style='width:100%;' />");
+                    $.mobile.changePage("#picture");
+                });
+                $.mobile.changePage("#pictures");
+            }
+            function capturePhoto() {               
+                navigator.camera.getPicture(onPhotoURISuccess, onFail, {
+                    quality:50,
+                    destinationType:destinationType.FILE_URL
+                });
+            }
+            function getPhoto(source) {
+                navigator.camera.getPicture(onPhotoURISuccess, onFail, {
+                    quality: 50,
+                    destinationType: destinationType.FILE_URI,
+                    sourceType: source
+                });
+            }
+            function onFail(message){
+                alert("failed because:"+message);
+            }
+            function win() {
+                console.log("upload success");
+            }
+            function fail() {
+                console.log("upload failed");
+            }
+            function uploadPhoto(imageURI) {
+                var options = new FileUploadOptions();
+                options.fileKey = "fileAddPic";//对应form表单控件的name属性
+                var imagefilename = Number(new Date()) + ".jpg";
+                options.fileName = imagefilename;
+
+                options.mimeType = "image/jpeg";
+                
+                var uri = localhost + "Image.ashx";
+                options.chunkedMode = false;
+
+                var ft = new FileTransfer();
+                ft.upload(imageURI, uri, win, fail, options);
+            }
+    </script>
+</body>
+</html>

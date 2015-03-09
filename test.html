@@ -1,0 +1,31 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>File</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="utf-8">
+    <script src="js/jquery.js"></script>
+    <script src="js/jquery.mobile-1.4.2.js"></script>
+    <script src="js/knockout.js"></script>
+    <link rel="stylesheet" type="text/css" href="css/jquery.mobile-1.4.2.css" />
+</head>
+<body>
+    <input type="file" id="file" name="file" />
+    <button id="sub">提交</button>
+    <script>
+        $(function () {
+            $("#sub").bind("click", function () {
+                $.ajax({
+                    url: "Image.ashx",
+                    type: "post",
+                    success: function () {
+                        alert("success");
+                    },
+                    error:function(){
+                        alert("error");
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
